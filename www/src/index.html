@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8"/>
+    <title>One time secret -- Protect secret from email or chat log</title>
+    <style>
+      @import "./index.css";
+    </style>
+  </head>
+  <body>
+  <div class="isolate bg-white px-6 py-24 sm:py-32 lg:px-8">
+    <div class="absolute inset-x-0 top-[-10rem] -z-10 transform-gpu overflow-hidden blur-3xl sm:top-[-20rem]" aria-hidden="true">
+      <div class="relative left-1/2 -z-10 aspect-[1155/678] w-[36.125rem] max-w-none -translate-x-1/2 rotate-[30deg] bg-gradient-to-tr from-[#ff80b5] to-[#9089fc] opacity-30 sm:left-[calc(50%-40rem)] sm:w-[72.1875rem]" style="clip-path: polygon(74.1% 44.1%, 100% 61.6%, 97.5% 26.9%, 85.5% 0.1%, 80.7% 2%, 72.5% 32.5%, 60.2% 62.4%, 52.4% 68.1%, 47.5% 58.3%, 45.2% 34.5%, 27.5% 76.7%, 0.1% 64.9%, 17.9% 100%, 27.6% 76.8%, 76.1% 97.7%, 74.1% 44.1%)"></div>
+    </div>
+    <div class="mx-auto max-w-xl text-center">
+      <h2 class="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">One time secret</h2>
+      <p class="mt-2 text-lg  leading-8 text-gray-600">Paste a password, secret message below. Protect it against email or chat logs.</p>
+    </div>
+    
+    <div id="view">
+      <form id="form" action="#" method="POST" class="mx-auto max-w-xl mt-4 md:mt-8">
+        <div class="grid grid-cols-1 gap-x-8 gap-y-6 sm:grid-cols-2">
+        
+          <div class="sm:col-span-2">
+            <label for="message" class="block text-sm font-semibold leading-6 text-gray-900">Secret content</label>
+            <div class="mt-2.5">
+              <textarea name="message" id="message" rows="4" class="block w-full rounded-md border-0 px-3.5 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"></textarea>
+            </div>
+          </div>
+          <div class="sm:col-span-2">
+            <label class="block text-sm font-semibold leading-6 text-gray-900">Privacy Options</label>
+            <div class="mt-2.5">
+              <div class="px-12 md:px-24 w-full mx-auto">
+                <div class="flex flex-row">
+                  <label class="inline-block pt-2 w-1/5 text-sm font-semibold leading-6 text-right text-gray-500">Expiry:</label>
+                  <select id="expiry" name="expiry" class="h-full ml-4 w-4/5 rounded-md border-0 py-2 pl-4 
+                  text-gray-400 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 
+                  focus:ring-inset focus:ring-indigo-600">
+                    <option value="604800">7 days</option>
+                    <option value="259200">3 days</option>
+                    <option value="86400">1 day</option>
+                    <option value="14400">4 hours</option>
+                    <option value="3600">1 hour</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <!-- <div class="mt-2.5">
+              <div class="w-full mx-auto px-12 md:px-24">
+                <div class="flex flex-row">
+                  <label class="inline-block pt-0 w-1/5 text-sm font-semibold text-right text-gray-500">Passphrase:(optional)</label>
+                  <input type="text" id="passphrase" name="passphrase" 
+                  class="h-full ml-4 w-4/5 rounded-md border-0 py-2 pl-4 text-gray-400 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600">
+                </div>
+              </div>
+            </div> -->
+          </div>
+          </div>
+          <div class="mt-8">
+            <button id="share-button" type="button" onclick="window.createSecretLinkHandler()" class="block w-full rounded-md bg-indigo-600 px-3.5 py-2.5 text-center text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">Create a secret link*</button>
+          </div>
+        </div>
+      </form>
+
+
+      <div id="share" style="display: none" class="mx-auto  max-w-xl mt-4 md:mt-8">
+        <div>
+          <h2>Share the secret link:</h2>
+          <input id="share-input" class="w-full bg-gray-200 outline-lime-200 outline-1" type="text" readonly value="" />
+        </div>
+        <div>
+          <hr />
+          <div>
+            <button type="submit" class="block w-full rounded-md bg-red-500 px-3.5 py-2.5 text-center text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">Burn this secret*</button>
+          </div>
+      
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { aesEncrypt } from "./crypto.js";
+    var genRandomKey = function(length) {
+      var characters ='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789~|<>?,./!@#$%^&*()_+{}-=';
+
+      let result = '';
+          const charactersLength = characters.length;
+          for ( var i = 0; i < length; i++ ) {
+              result += characters.charAt(Math.floor(Math.random() * charactersLength));
+          }
+
+          return result;
+    }
+
+    var collectFormValues = function() {
+      // textarea message
+      var messageElm = document.getElementById('message');
+      var expiryElm = document.getElementById('expiry');
+      var passPhrase = document.getElementById('passphrase');
+      
+      return {
+        'message': messageElm.value,
+        'expiry': expiryElm.value,
+        'passPhrase': null
+      }
+    }
+
+    window.postCreateLink = function(messageObj, randomPassword) {
+      var myHeaders = new Headers();
+      myHeaders.append("Content-Type", "application/x-www-form-urlencoded");
+
+      var urlencoded = new URLSearchParams();
+      urlencoded.append("message", messageObj.message);
+      urlencoded.append("message_ttl", messageObj.expiry);
+      urlencoded.append("has_passphrase", "false");
+
+      fetch("https://rs-onetimesecret.experiments.workers.dev/api/secret/", {
+        method: 'POST',
+        headers: myHeaders,
+        body: urlencoded,
+        redirect: 'follow'
+      })
+        .then(response => response.json())
+        .then(function(resp) {
+          var url = resp.url;
+          var shareElm = document.getElementById('share');
+          shareElm.style = '';
+
+          var shareInputElm = document.getElementById('share-input');
+          shareInputElm.value = window.location.href + 'private?secret=' + url + '&key=' + randomPassword
+        })
+        .catch(error => console.log('error', error));
+
+    }
+
+    window.createSecretLinkHandler = function() {
+
+      var form = collectFormValues();
+
+      var cipherText = form.message;
+      var messageObj = {
+        'expiry': form.expiry,
+        'message': form.message,
+        'hasPassPhrase': false
+      }
+
+      // App level encryption
+      var randomPassword = genRandomKey(128);
+      aesEncrypt(messageObj.message, randomPassword).then(cipher => {
+        messageObj.message = cipher;
+
+        postCreateLink(messageObj, randomPassword);
+
+        // aesDecrypt(cipher, randomPassword).then(_Text => {
+        //   console.log(_Text)
+        // })
+      });
+
+    }
+
+
+  </script>
+</body>
+</html>

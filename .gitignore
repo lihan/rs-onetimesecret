@@ -1,0 +1,7 @@
+.fleet/
+.wrangler/
+build/
+target/
+node_modules/
+**/.parcel-cache/
+www/dist/

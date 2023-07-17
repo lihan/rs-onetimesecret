@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8"/>
+    <title>One time secret -- Protect secret from email or chat log</title>
+    <style>
+      @import "./private.css";
+    </style>
+  </head>
+  <body>
+  <div class="isolate bg-white px-6 py-24 sm:py-32 lg:px-8">
+    <div class="absolute inset-x-0 top-[-10rem] -z-10 transform-gpu overflow-hidden blur-3xl sm:top-[-20rem]" aria-hidden="true">
+      <div class="relative left-1/2 -z-10 aspect-[1155/678] w-[36.125rem] max-w-none -translate-x-1/2 rotate-[30deg] bg-gradient-to-tr from-[#ff80b5] to-[#9089fc] opacity-30 sm:left-[calc(50%-40rem)] sm:w-[72.1875rem]" style="clip-path: polygon(74.1% 44.1%, 100% 61.6%, 97.5% 26.9%, 85.5% 0.1%, 80.7% 2%, 72.5% 32.5%, 60.2% 62.4%, 52.4% 68.1%, 47.5% 58.3%, 45.2% 34.5%, 27.5% 76.7%, 0.1% 64.9%, 17.9% 100%, 27.6% 76.8%, 76.1% 97.7%, 74.1% 44.1%)"></div>
+    </div>
+    <div class="mx-auto max-w-xl text-center">
+      <h2 class="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
+        <a href="/">
+          One time secret
+        </a>
+      </h2>
+      <p class="mt-2 text-lg  leading-8 text-gray-600">Paste a password, secret message below. Protect it against email or chat logs.</p>
+    </div>
+
+    <div class="mx-auto  max-w-xl mt-4 md:mt-8">
+      <div id="secret" style="display: none;">
+        <h2>Secret Message</h2>
+        <textarea id="secret-textarea" class="w-full bg-gray-200 outline-lime-200 outline-1 h-32" type="text" readonly></textarea>
+      </div>
+      <div id="error" style="display: none;">
+        <p class="text-red-800">The secret cannot be retrieved, it could be expired or has already opened!</p>
+      </div>
+      <div>
+        <span class="text-gray-600">The secret will only reveal once</span>
+      <div id="control">
+        
+        <button type="button" onclick="window.retrieveSecretFromStore()" class="mt-2 block w-full rounded-md bg-red-500 px-3.5 py-2.5 text-center text-sm font-semibold text-white shadow-sm  focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">Reveal secret*</button>
+      </div>
+      </div>
+    </div>
+    <script type="module">
+      import { aesDecrypt } from "./crypto.js";
+
+      var urlParams = new URLSearchParams(window.location.search);
+      var secret = urlParams.get('secret');
+
+      var key = urlParams.get('key');
+      var ctrlContainer = document.getElementById('control');
+          
+
+      window.retrieveSecretFromStore = function() {
+        fetch("https://rs-onetimesecret.experiments.workers.dev/api/secret/?secret_url="+secret, {
+          method: 'GET',
+          redirect: 'follow'
+        })
+          .then(r => r.json())
+          .then(function(jsonResp) {
+            var secretContainer = document.getElementById('secret');
+            var secretTextArea = document.getElementById('secret-textarea');
+            secretContainer.style = "";
+
+            aesDecrypt(jsonResp.text, key).then(function(text){
+              console.log('text ', text)
+              secretTextArea.value=text;
+              ctrlContainer.style='display: none';
+            })
+            
+          })
+          .catch(function(error){
+            var errContainer = document.getElementById('error');
+            errContainer.style='display: block';
+            var ctrlContainer = document.getElementById('control');
+            ctrlContainer.style='display: none';
+          })
+   
+      }
+    </script>
+  
+  </div>
+</body>
+</html>
